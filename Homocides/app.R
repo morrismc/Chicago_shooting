@@ -7,21 +7,27 @@
 #    http://shiny.rstudio.com/
 #
 # 
-# library(shiny)
-# library(beepr)
-# library(ggrepel)
-# library(RCurl)
-# 
-# library(leaflet)
-# library(htmlwidgets)
-# library(htmltools)
+setwd('/Users/matthew/Documents/GitHub/Chicago_shooting/Homocides')
+library(beepr)
+library(ggrepel)
+library(RCurl)
+
+library(leaflet)
+library(htmlwidgets)
+library(htmltools)
 # library(geojsonio)
-# library(shiny)
-# # Get Data
-# #Download Up to date data from the City of Chicago
-# url <- 'https://data.cityofchicago.org/api/views/k9xv-yxzs/rows.csv?accessType=DOWNLOAD'
-# x <- getURL(url)
-# Homocides <- read.csv(textConnection(x))
+library(shiny)
+
+library(progress)
+library(tidyverse)
+require(knitr)
+require(scales)
+
+
+# Get Data
+#Download Up to date data from the City of Chicago
+Homocides <- read.csv('Homocides.csv')
+
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -36,7 +42,7 @@ ui <- fluidPage(
                   value = 0, 
                   step = 1,
                   animate = 
-                    animationOptions(interval = 100, loop = TRUE)),
+                    animationOptions(interval = 100, loop = FALSE)),
       actionButton("resetB","Reset Plot",class = "btn-block")
       
     ),
@@ -76,29 +82,16 @@ server <- function(input, output) {
   observe({
     # Filter by Year
     Homocides_flt <- filter(Homocides,Year == input$Yr)
-    
-        #create a 2 column matrix, 1 col DoY, 2 col cumsum homocides
-        D <- data.frame(Day = rep(NA,365),
-                        Homocide_cnt = rep(0,365))
-        
-        # Zip through all of the homocides and then calculate the number of 
-        # homocides per day.
+    # 
+    #     #create a 1 column matrix,1 col cumsum homocides
+        D <- data.frame(Homocide_cnt = rep(1,nrow(Homocides_flt)),
+                        DoY = rep(0,nrow(Homocides_flt)))
+        D$Homocide_cnt <- ave(D$Homocide_cnt,  FUN=cumsum)
+        D$DoY <- Homocides_flt$Day
+    #     #filter the homocides to be ordered by day of year
         Homocides_flt <- Homocides_flt[order(Homocides_flt$Day),]
-        a = 1
-        for (r in 1:nrow(Homocides_flt)){
-            if(Homocides_flt[r,23] == a){
-              
-              
-              D[a,2] <- D[a,2] + 1
-              
-            }
-          else {
-            D[a,1] <- a
-            a<- a + 1
-          }
-          
-        }
-        D$Homocide_cnt = cumsum(D$Homocide_cnt)
+    #     
+        
     
     # Then be ready to plot by Day of Year
     sites <- filter(Homocides_flt,Day == input$DoY)
@@ -117,19 +110,23 @@ server <- function(input, output) {
       
     
 
-    output$histCentile <- renderPlot({
+     output$histCentile <- renderPlot({
+    
+       plot(Homocides_flt$Day,
+           D$Homocide_cnt,
+            main = "Cumulative Homocides",
+            xlab = "Day of Year",
+            ylab = "Cumulative Count",
+            xlim = c(0, 365),
+            ylim = c(0, 700),
+            type = 'l'
+       )
+       abline(v = input$DoY)
+       
 
-      plot(input$DoY,
-           D[input$DoY,2],
-           main = "Cumulative Homocides",
-           xlab = "Day of Year",
-           xlim = c(0, 365),
-           ylim = c(0, 100)
-      )
 
-
-    })
-    # browser()
+     })
+     # browser()
   })
   
   

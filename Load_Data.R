@@ -51,7 +51,7 @@ DayofYear[,2] <- Homocides$ID
 
 Homocides <- merge(Homocides, DayofYear, by = c("ID"))
 
-#################################### SECTION TITLE ####################################
+#################################### Determine Color for data ####################################
 
 D <- data.frame(color = rep(NA,nrow(Homocides)),
                 ID = rep(NA,nrow(Homocides)))
@@ -69,5 +69,40 @@ for (r in 1:nrow(Homocides)) {
   
 Homocides <- merge(Homocides, D, by = c("ID"))
 
-rm(DayofYear,D,,m,a)
+# rm(DayofYear,D,,m,a)
+#################################### SECTION TITLE ####################################
 
+url <- 'https://data.cityofchicago.org/api/views/k9xv-yxzs/rows.csv?accessType=DOWNLOAD'
+x <- getURL(url)
+Homocides <- read.csv(textConnection(x))
+
+
+library(lubridate)
+DayofYear <- data.frame(Day = rep(NA,nrow(Homocides)),
+                        ID = rep(NA,nrow(Homocides)))
+
+
+DayofYear[,1] <- yday(mdy_hms(Homocides$Date))
+DayofYear[,2] <- Homocides$ID
+
+Homocides <- merge(Homocides, DayofYear, by = c("ID"))
+
+#################################### Determine Color for data ####################################
+
+D <- data.frame(color = rep(NA,nrow(Homocides)),
+                ID = rep(NA,nrow(Homocides)))
+
+for (r in 1:nrow(Homocides)) {
+  if(Homocides[r,3] == 'true'){
+    D[r,1] <- 'blue'
+    D[r,2] <- Homocides[r,1]
+  }
+  else {
+    D[r,1] <- 'red'
+    D[r,2] <- Homocides[r,1]
+  }
+}
+
+Homocides <- merge(Homocides, D, by = c("ID"))
+setwd('/Users/matthew/Documents/GitHub/Chicago_shooting/Homocides')
+write.csv(Homocides, file = "Homocides.csv")
